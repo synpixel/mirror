@@ -43,8 +43,8 @@ local function eq(a: any, b: any): boolean
 	return true
 end
 
-local function find_component(world: jecs.World, target_name: string): jecs.Entity?
-	for component, name in world:query(jecs.Name):with(jecs.Component):cached():iter() do
+local function find_component(self: Mirror, target_name: string): jecs.Entity?
+	for component, name in self.world:query(jecs.Name):with(jecs.Component, self.Networked):cached():iter() do
 		if name == target_name then
 			return component
 		end
@@ -130,7 +130,7 @@ local function apply(self: Mirror, full_changes: Changes)
 		end
 
 		for name, value in changes do
-			local component = assert(find_component(self.world, name), `failed to find component "{name}"`)
+			local component = assert(find_component(self, name), `failed to find component "{name}"`)
 			if value == DELETED then
 				self.world:remove(id, component)
 				continue
