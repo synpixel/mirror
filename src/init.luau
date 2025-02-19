@@ -12,6 +12,10 @@ local NOTHING: Nothing = "__n"
 export type Mirror = {
 	_entities: { [number]: jecs.Entity },
 	_deleted: { number },
+	_queries: {
+		networked_component_names: jecs.Query<string>,
+		previous_ids: jecs.Query<>,
+	},
 	_Previous: jecs.Entity<jecs.Entity>,
 	world: jecs.World,
 	Networked: jecs.Entity<{ Player }?>,
@@ -65,7 +69,7 @@ local function hydrate(self: Mirror, player: Player): Changes
 	local all_changes = {} :: Changes
 	local all_players = Players:GetPlayers()
 
-	for component, name in self.world:query(jecs.Name):with(jecs.Component, self.Networked):cached():iter() do
+	for component, name in self._queries.networked_component_names:iter() do
 		for id, value, players in self.world:query(component, self.Networked):without(jecs.Component):iter() do
 			local is_allowed = table.find(players or all_players, player) ~= nil
 			if is_allowed then
@@ -81,7 +85,7 @@ end
 local function collect(self: Mirror): { [Player]: Changes }
 	local full_changes = {} :: Changes
 
-	for component, name in self.world:query(jecs.Name):with(jecs.Component, self.Networked):cached():iter() do
+	for component, name in self._queries.networked_component_names:iter() do
 		for id, value in self.world:query(component):without(jecs.Component):with(self.Networked):iter() do
 			local previous = self.world:get(id, pair(self._Previous, component))
 			if not eq(previous, value) then
@@ -92,7 +96,7 @@ local function collect(self: Mirror): { [Player]: Changes }
 		end
 	end
 
-	for id in self.world:query(pair(self._Previous, Wildcard)):cached():iter() do
+	for id in self._queries.previous_ids:iter() do
 		local component = self.world:target(id, self._Previous)
 		local name = self.world:get(component, jecs.Name) :: string
 		if not self.world:has(id, component) then
@@ -155,6 +159,10 @@ local function new(world: jecs.World): Mirror
 	return {
 		_entities = {},
 		_deleted = deleted,
+		_queries = {
+			networked_component_names = world:query(jecs.Name):with(jecs.Component, Networked):cached(),
+			previous_ids = world:query(pair(Previous, Wildcard)):cached(),
+		},
 		_Previous = Previous,
 		world = world,
 		Networked = Networked,
