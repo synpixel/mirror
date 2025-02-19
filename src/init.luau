@@ -19,7 +19,6 @@ export type Mirror = {
 	_Previous: jecs.Entity<jecs.Entity>,
 	world: jecs.World,
 	Networked: jecs.Entity<{ Player }?>,
-	hydrate: (self: Mirror, player: Player) -> Changes,
 	collect: (self: Mirror) -> { [Player]: Changes },
 	apply: (self: Mirror, changes: Changes) -> (),
 }
@@ -53,22 +52,6 @@ local function find_component(self: Mirror, target_name: string): jecs.Entity?
 		end
 	end
 	return nil
-end
-
-local function hydrate(self: Mirror, player: Player): Changes
-	local all_changes = {} :: Changes
-
-	for component, name in self._queries.networked_component_names:iter() do
-		for id, value, players in self.world:query(component, self.Networked):without(jecs.Component):iter() do
-			local is_allowed = players == nil or table.find(players, player) ~= nil
-			if is_allowed then
-				all_changes[id] = all_changes[id] or {}
-				all_changes[id][name] = if value == nil then NOTHING else value
-			end
-		end
-	end
-
-	return all_changes
 end
 
 local function collect(self: Mirror): { [Player]: Changes }
@@ -180,7 +163,6 @@ local function new(world: jecs.World): Mirror
 		_Previous = Previous,
 		world = world,
 		Networked = Networked,
-		hydrate = hydrate,
 		collect = collect,
 		apply = apply,
 	}
