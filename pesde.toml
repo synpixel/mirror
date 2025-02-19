@@ -4,6 +4,7 @@ description = "Simple replication for jecs"
 authors = ["synpixel"]
 repository = "https://github.com/synpixel/mirror"
 license = "MIT"
+includes = ["pesde.toml", "README.md", "LICENSE", "src/**/*"]
 
 [target]
 environment = "roblox"
