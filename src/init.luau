@@ -47,6 +47,21 @@ local function eq(a: any, b: any): boolean
 	return true
 end
 
+local function array_eq(a: any, b: any): boolean
+	if typeof(a) ~= "table" or typeof(b) ~= "table" then
+		return a == b
+	end
+
+	local clone = table.clone(a)
+
+	for _, v in b do
+		local index = table.find(clone, v)
+		table.remove(clone, index)
+	end
+
+	return #clone == 0
+end
+
 local function find_component(self: Mirror, target_name: string): jecs.Entity?
 	for component, name in self._queries.networked_component_names:iter() do
 		if name == target_name then
@@ -189,9 +204,15 @@ local function new(world: jecs.World): Mirror
 		end
 	end)
 
-	world:set(Networked, jecs.OnSet, function(id)
-		if not world:has(id, jecs.Component) then
+	world:set(Networked, jecs.OnSet, function(id, players)
+		if world:has(id, jecs.Component) then
+			return
+		end
+
+		local previous = world:get(id, pair(Previous, Networked))
+		if not array_eq(previous, players) then
 			mirror._should_hydrate = true
+			world:set(id, pair(Previous, Networked), players)
 		end
 	end)
 
