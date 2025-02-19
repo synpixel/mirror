@@ -112,13 +112,17 @@ local function collect(self: Mirror): { [Player]: Changes }
 	for id, changes in full_changes do
 		local players = self.world:get(id, self.Networked) or all_players
 
-		for _, player in all_players do
-			if table.find(players, player) and not self._should_hydrate then
+		if self._should_hydrate then
+			for _, player in all_players do
+				if not table.find(players, player) then
+					filtered_changes[player] = filtered_changes[player] or {}
+					filtered_changes[player][id] = DELETED
+				end
+			end
+		else
+			for _, player in players do
 				filtered_changes[player] = filtered_changes[player] or {}
 				filtered_changes[player][id] = changes
-			elseif self._should_hydrate then
-				filtered_changes[player] = filtered_changes[player] or {}
-				filtered_changes[player][id] = DELETED
 			end
 		end
 	end
