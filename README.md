@@ -9,14 +9,18 @@ Mirror is a simple replication library for [jecs](https://github.com/Ukendio/jec
 ```lua
 local mirror = Mirror.new(world)
 
+-- Mirror relies on `jecs.Name` for component replication
+-- Don't forget the mirror.Networked trait
 local Temperature = world:component() :: jecs.Entity<number>
-world:set(Temperature, jecs.Name, "Temperature") -- Mirror relies on `jecs.Name` for component replication
+world:set(Temperature, jecs.Name, "Temperature")
 world:add(Temperature, mirror.Networked)
 
 local function on_player_added(player: Player)
     local x = world:entity()
     world:set(x, Temperature, 0)
-    world:add(x, mirror.Networked, { player }) -- Only allow this specific player to see this entity and its components
+    -- Only allow this specific player to see this entity and its components
+    -- You can allow every player to see this entity with `world:add(x, mirror.Networked)`
+    world:set(x, mirror.Networked, { player })
 
     -- Provide new players with the entire buffer
     local changes = mirror:hydrate(player)
@@ -39,7 +43,7 @@ end
 ```lua
 local mirror = Mirror.new(world)
 
--- The component should exist in both contexts
+-- The component should exist in both contexts with the same name
 local Temperature = world:component() :: jecs.Entity<number>
 world:set(Temperature, jecs.Name, "Temperature")
 world:add(Temperature, mirror.Networked)
