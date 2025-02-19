@@ -69,11 +69,10 @@ end
 
 local function hydrate(self: Mirror, player: Player): Changes
 	local all_changes = {} :: Changes
-	local all_players = Players:GetPlayers()
 
 	for component, name in self._queries.networked_component_names:iter() do
 		for id, value, players in self.world:query(component, self.Networked):without(jecs.Component):iter() do
-			local is_allowed = table.find(players or all_players, player) ~= nil
+			local is_allowed = players == nil or table.find(players, player) ~= nil
 			if is_allowed then
 				all_changes[id] = all_changes[id] or {}
 				all_changes[id][name] = if value == nil then NOTHING else value
