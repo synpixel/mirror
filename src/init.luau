@@ -103,7 +103,7 @@ local function collect(self: Mirror): { [Player]: Changes }
 	local all_players = Players:GetPlayers()
 
 	for id, changes in full_changes do
-		local players = if changes == DELETED then all_players else self.world:get(id, self.Networked) or all_players
+		local players = self.world:get(id, self.Networked) or all_players
 		for _, player in players do
 			filtered_changes[player] = filtered_changes[player] or {}
 			filtered_changes[player][id] = changes
