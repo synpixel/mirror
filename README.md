@@ -23,7 +23,6 @@ local function on_player_added(player: Player)
 
     -- Only allow this specific player to see this entity and its components
     -- You can allow every player to see this entity with `world:add(x, mirror.Networked)`
-    -- Setting mirror.Networked will provide every player with fresh data, do it sparingly
     world:set(x, mirror.Networked, { player })
 
     -- Provide new players with the entire buffer
