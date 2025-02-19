@@ -24,10 +24,6 @@ local function on_player_added(player: Player)
     -- Only allow this specific player to see this entity and its components
     -- You can allow every player to see this entity with `world:add(x, mirror.Networked)`
     world:set(x, mirror.Networked, { player })
-
-    -- Provide new players with the entire buffer
-    local changes = mirror:hydrate(player)
-    replicate:FireClient(player, changes)
 end
 
 local function on_every_frame(delta_time: number)
