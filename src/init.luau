@@ -52,6 +52,10 @@ local function array_eq(a: any, b: any): boolean
 		return a == b
 	end
 
+	if #a ~= #b then
+		return false
+	end
+
 	local clone = table.clone(a)
 
 	for _, v in b do
