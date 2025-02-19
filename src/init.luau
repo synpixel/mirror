@@ -74,6 +74,7 @@ local function collect(self: Mirror): { [Player]: Changes }
 		if not self.world:has(id, component) then
 			full_changes[id] = full_changes[id] or {}
 			full_changes[id][name] = DELETED
+			self.world:remove(id, pair(self._Previous, component))
 		end
 	end
 
