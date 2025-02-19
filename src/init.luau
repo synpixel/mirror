@@ -55,18 +55,6 @@ local function find_component(self: Mirror, target_name: string): jecs.Entity?
 	return nil
 end
 
-local function ref_server(self: Mirror, id: number): (jecs.Entity, () -> ())
-	if not self._entities[id] then
-		self._entities[id] = self.world:entity()
-	end
-
-	local function drop()
-		self._entities[id] = nil
-	end
-
-	return self._entities[id], drop
-end
-
 local function hydrate(self: Mirror, player: Player): Changes
 	local all_changes = {} :: Changes
 
@@ -115,7 +103,7 @@ local function collect(self: Mirror): { [Player]: Changes }
 	local all_players = Players:GetPlayers()
 
 	for id, changes in full_changes do
-		local players = self.world:get(id, self.Networked) or all_players
+		local players = if changes == DELETED then all_players else self.world:get(id, self.Networked) or all_players
 		for _, player in players do
 			filtered_changes[player] = filtered_changes[player] or {}
 			filtered_changes[player][id] = changes
@@ -127,11 +115,19 @@ end
 
 local function apply(self: Mirror, full_changes: Changes)
 	for server_id, changes in full_changes do
-		local id, delete = ref_server(self, server_id)
+		local id = self._entities[server_id]
+
 		if changes == DELETED then
-			delete()
-			self.world:delete(id)
+			if id then
+				self.world:delete(id)
+				self._entities[server_id] = nil
+			end
 			continue
+		end
+
+		if not id then
+			id = self.world:entity()
+			self._entities[server_id] = id
 		end
 
 		assert(typeof(changes) == "table", "luau")
