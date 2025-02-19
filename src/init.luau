@@ -134,6 +134,8 @@ local function apply(self: Mirror, full_changes: Changes)
 			continue
 		end
 
+		assert(typeof(changes) == "table", "luau")
+
 		for name, value in changes do
 			local component = assert(find_component(self, name), `failed to find component "{name}"`)
 			if value == DELETED then
