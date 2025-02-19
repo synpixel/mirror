@@ -11,7 +11,7 @@ local NOTHING: Nothing = "__n"
 
 export type Mirror = {
 	_entities: { [number]: jecs.Entity },
-	_deleted: { number },
+	_deleted: { jecs.Entity },
 	_queries: {
 		networked_component_names: jecs.Query<string>,
 		previous_ids: jecs.Query<>,
