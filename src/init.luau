@@ -107,10 +107,13 @@ local function collect(self: Mirror): { [Player]: Changes }
 		local previous_players = self.world:get(id, pair(self._Previous, self.Networked)) or all_players
 
 		for _, player in all_players do
-			if table.find(players, player) and table.find(previous_players, player) then
+			local is_allowed = table.find(players, player) ~= nil
+			local was_allowed = table.find(previous_players, player) ~= nil
+
+			if is_allowed and was_allowed then
 				filtered_changes[player] = filtered_changes[player] or {}
 				filtered_changes[player][id] = changes
-			elseif table.find(players, player) then
+			elseif is_allowed then
 				filtered_changes[player] = filtered_changes[player] or {}
 
 				for component, name in self._queries.networked_component_names:iter() do
@@ -118,7 +121,7 @@ local function collect(self: Mirror): { [Player]: Changes }
 					filtered_changes[player][id] = filtered_changes[player][id] or {}
 					filtered_changes[player][id][name] = if value == nil then NOTHING else value
 				end
-			elseif table.find(previous_players, player) then
+			elseif was_allowed then
 				filtered_changes[player] = filtered_changes[player] or {}
 				filtered_changes[player][id] = DELETED
 			end
