@@ -25,7 +25,6 @@ export type Mirror = {
 }
 
 local pair = jecs.pair
-local Wildcard = jecs.Wildcard
 
 local function eq(a: any, b: any): boolean
 	if typeof(a) ~= "table" or typeof(b) ~= "table" then
@@ -164,7 +163,7 @@ local function new(world: jecs.World): Mirror
 		_deleted = deleted,
 		_queries = {
 			networked_component_names = world:query(jecs.Name):with(jecs.Component, Networked):cached(),
-			previous_ids = world:query(pair(Previous, Wildcard)):cached(),
+			previous_ids = world:query(pair(Previous, jecs.Wildcard)):cached(),
 		},
 		_Previous = Previous,
 		world = world,
