@@ -12,6 +12,7 @@ local NOTHING: Nothing = "__n"
 export type Mirror = {
 	_entities: { [number]: jecs.Entity },
 	_deleted: { jecs.Entity },
+	_should_hydrate: boolean,
 	_queries: {
 		networked_component_names: jecs.Query<string>,
 		previous_ids: jecs.Query<>,
@@ -104,11 +105,28 @@ local function collect(self: Mirror): { [Player]: Changes }
 
 	for id, changes in full_changes do
 		local players = self.world:get(id, self.Networked) or all_players
+
 		for _, player in players do
+			if self._should_hydrate then
+				filtered_changes[player] = self:hydrate(player)
+				continue
+			end
+
 			filtered_changes[player] = filtered_changes[player] or {}
 			filtered_changes[player][id] = changes
 		end
+
+		if self._should_hydrate then
+			for _, player in all_players do
+				if not table.find(players, player) then
+					filtered_changes[player] = filtered_changes[player] or {}
+					filtered_changes[player][id] = DELETED
+				end
+			end
+		end
 	end
+
+	self._should_hydrate = false
 
 	return filtered_changes
 end
@@ -148,16 +166,10 @@ local function new(world: jecs.World): Mirror
 	local Networked = world:component() :: jecs.Entity<{ Player }?>
 	local Previous = world:entity()
 
-	local deleted = {}
-	world:set(Networked, jecs.OnRemove, function(id)
-		if not world:has(id, jecs.Component) then
-			table.insert(deleted, id)
-		end
-	end)
-
-	return {
+	local mirror = {
 		_entities = {},
-		_deleted = deleted,
+		_deleted = {},
+		_should_hydrate = false,
 		_queries = {
 			networked_component_names = world:query(jecs.Name):with(jecs.Component, Networked):cached(),
 			previous_ids = world:query(pair(Previous, jecs.Wildcard)):cached(),
@@ -169,6 +181,20 @@ local function new(world: jecs.World): Mirror
 		collect = collect,
 		apply = apply,
 	}
+
+	world:set(Networked, jecs.OnRemove, function(id)
+		if not world:has(id, jecs.Component) then
+			table.insert(mirror._deleted, id)
+		end
+	end)
+
+	world:set(Networked, jecs.OnSet, function(id)
+		if not world:has(id, jecs.Component) then
+			mirror._should_hydrate = true
+		end
+	end)
+
+	return mirror
 end
 
 return { new = new }
