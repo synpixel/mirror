@@ -12,7 +12,6 @@ local NOTHING: Nothing = "__n"
 export type Mirror = {
 	_entities: { [number]: jecs.Entity },
 	_deleted: { jecs.Entity },
-	_should_hydrate: boolean,
 	_queries: {
 		networked_component_names: jecs.Query<string>,
 		previous_ids: jecs.Query<>,
@@ -45,25 +44,6 @@ local function eq(a: any, b: any): boolean
 	end
 
 	return true
-end
-
-local function array_eq(a: any, b: any): boolean
-	if typeof(a) ~= "table" or typeof(b) ~= "table" then
-		return a == b
-	end
-
-	if #a ~= #b then
-		return false
-	end
-
-	local clone = table.clone(a)
-
-	for _, v in b do
-		local index = table.find(clone, v)
-		table.remove(clone, index)
-	end
-
-	return #clone == 0
 end
 
 local function find_component(self: Mirror, target_name: string): jecs.Entity?
@@ -122,31 +102,32 @@ local function collect(self: Mirror): { [Player]: Changes }
 	local filtered_changes = {} :: { [Player]: Changes }
 	local all_players = Players:GetPlayers()
 
-	if self._should_hydrate then
-		for _, player in all_players do
-			filtered_changes[player] = self:hydrate(player)
-		end
-	end
-
 	for id, changes in full_changes do
 		local players = self.world:get(id, self.Networked) or all_players
+		local previous_players = self.world:get(id, pair(self._Previous, self.Networked)) or all_players
 
-		if self._should_hydrate then
-			for _, player in all_players do
-				if not table.find(players, player) then
-					filtered_changes[player] = filtered_changes[player] or {}
-					filtered_changes[player][id] = DELETED
-				end
-			end
-		else
-			for _, player in players do
+		for _, player in all_players do
+			if table.find(players, player) and table.find(previous_players, player) then
 				filtered_changes[player] = filtered_changes[player] or {}
 				filtered_changes[player][id] = changes
+			elseif table.find(players, player) then
+				filtered_changes[player] = filtered_changes[player] or {}
+
+				for component, name in self._queries.networked_component_names:iter() do
+					local value = self.world:get(id, component)
+					filtered_changes[player][id] = filtered_changes[player][id] or {}
+					filtered_changes[player][id][name] = if value == nil then NOTHING else value
+				end
+			elseif table.find(previous_players, player) then
+				filtered_changes[player] = filtered_changes[player] or {}
+				filtered_changes[player][id] = DELETED
 			end
 		end
-	end
 
-	self._should_hydrate = false
+		if players ~= previous_players then
+			self.world:set(id, pair(self._Previous, self.Networked), players)
+		end
+	end
 
 	return filtered_changes
 end
@@ -189,7 +170,6 @@ local function new(world: jecs.World): Mirror
 	local mirror = {
 		_entities = {},
 		_deleted = {},
-		_should_hydrate = false,
 		_queries = {
 			networked_component_names = world:query(jecs.Name):with(jecs.Component, Networked):cached(),
 			previous_ids = world:query(pair(Previous, jecs.Wildcard)):cached(),
@@ -205,18 +185,6 @@ local function new(world: jecs.World): Mirror
 	world:set(Networked, jecs.OnRemove, function(id)
 		if not world:has(id, jecs.Component) then
 			table.insert(mirror._deleted, id)
-		end
-	end)
-
-	world:set(Networked, jecs.OnSet, function(id, players)
-		if world:has(id, jecs.Component) then
-			return
-		end
-
-		local previous = world:get(id, pair(Previous, Networked))
-		if not array_eq(previous, players) then
-			mirror._should_hydrate = true
-			world:set(id, pair(Previous, Networked), players)
 		end
 	end)
 
