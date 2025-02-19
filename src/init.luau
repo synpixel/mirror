@@ -14,7 +14,7 @@ export type Mirror = {
 	_deleted: { jecs.Entity },
 	_queries: {
 		networked_component_names: jecs.Query<string>,
-		previous_ids: jecs.Query<>,
+		previous: jecs.Query<>,
 	},
 	_Previous: jecs.Entity<jecs.Entity>,
 	world: jecs.World,
@@ -68,7 +68,7 @@ local function collect(self: Mirror): { [Player]: Changes }
 		end
 	end
 
-	for id in self._queries.previous_ids:iter() do
+	for id in self._queries.previous:iter() do
 		local component = self.world:target(id, self._Previous)
 		local name = self.world:get(component, jecs.Name) :: string
 		if not self.world:has(id, component) then
@@ -158,7 +158,7 @@ local function new(world: jecs.World): Mirror
 		_deleted = {},
 		_queries = {
 			networked_component_names = world:query(jecs.Name):with(jecs.Component, Networked):cached(),
-			previous_ids = world:query(pair(Previous, jecs.Wildcard)):cached(),
+			previous = world:query(pair(Previous, jecs.Wildcard)):cached(),
 		},
 		_Previous = Previous,
 		world = world,
