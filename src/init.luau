@@ -56,12 +56,12 @@ local function find_component(self: Mirror, target_name: string): jecs.Entity?
 	return nil
 end
 
-local function get_server_entity(self: Mirror, id: number): (jecs.Entity, () -> ())
-	if not self._entities[id] then
-		self._entities[id] = self.world:entity()
+local function ref_entity(self: Mirror, server_id: number): (jecs.Entity, () -> ())
+	if not self._entities[server_id] then
+		self._entities[server_id] = self.world:entity()
 	end
-	return self._entities[id], function()
-		self._entities[id] = nil
+	return self._entities[server_id], function()
+		self._entities[server_id] = nil
 	end
 end
 
@@ -126,7 +126,7 @@ end
 
 local function apply(self: Mirror, full_changes: Changes)
 	for server_id, changes in full_changes do
-		local id, drop = get_server_entity(self, server_id)
+		local id, drop = ref_entity(self, server_id)
 		if changes == DELETED then
 			drop()
 			self.world:delete(id)
