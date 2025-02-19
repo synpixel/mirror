@@ -46,8 +46,8 @@ world:add(Temperature, mirror.Networked)
 
 local function on_every_frame()
     for id, temperature in world:query(Temperature):iter() do
-		print(`entity #{id} is {temperature}°`)
-	end
+        print(`entity #{id} is {temperature}°`)
+    end
 end
 
 replicate.OnClientEvent:Connect(function(changes)
