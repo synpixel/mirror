@@ -48,7 +48,7 @@ local function eq(a: any, b: any): boolean
 end
 
 local function find_component(self: Mirror, target_name: string): jecs.Entity?
-	for component, name in self.world:query(jecs.Name):with(jecs.Component, self.Networked):cached():iter() do
+	for component, name in self._queries.networked_component_names:iter() do
 		if name == target_name then
 			return component
 		end
