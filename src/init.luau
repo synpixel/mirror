@@ -158,7 +158,7 @@ local function new(world: jecs.World): Mirror
 		_deleted = {},
 		_queries = {
 			networked_component_names = world:query(jecs.Name):with(jecs.Component, Networked):cached(),
-			previous_ids = world:query(pair(Previous, jecs.Wildcard)):cached(),
+			previous_ids = world:query(pair(Previous, jecs.Wildcard)):with(Networked):cached(),
 		},
 		_Previous = Previous,
 		world = world,
