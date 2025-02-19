@@ -35,6 +35,7 @@ local function on_every_frame(delta_time: number)
         world:set(id, Temperature, temperature + delta_time)
     end
 
+    -- Collect and replicate changes since last `:collect()` call
     for player, changes in mirror:collect() do
         replicate:FireClient(player, changes)
     end
@@ -58,6 +59,7 @@ local function on_every_frame()
 end
 
 replicate.OnClientEvent:Connect(function(changes)
+    -- Apply incoming changes with `:apply(...)`
     mirror:apply(changes)
 end)
 ```
