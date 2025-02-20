@@ -171,6 +171,7 @@ local function new(world: jecs.World): Mirror
 	world:set(Networked, jecs.OnRemove, function(id)
 		if not world:has(id, jecs.Component) then
 			table.insert(mirror._deleted, id)
+			world:remove(id, pair(Previous, jecs.Wildcard))
 		end
 	end)
 
