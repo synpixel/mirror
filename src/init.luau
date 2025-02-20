@@ -16,6 +16,7 @@ export type Mirror = {
 		networked_component_names: jecs.Query<string>,
 		previous: jecs.Query<>,
 	},
+	_awaiting_hydration: { Player },
 	_Previous: jecs.Entity<jecs.Entity>,
 	world: jecs.World,
 	Networked: jecs.Entity<{ Player }?>,
@@ -67,6 +68,26 @@ local function find_component(self: Mirror, target_name: string): jecs.Entity?
 		end
 	end
 	return nil
+end
+
+local function hydrate(self: Mirror, player: Player): Changes
+	local hydration = {} :: Changes
+
+	for component, name in self._queries.networked_component_names:iter() do
+		for id, value in self.world:query(component):without(jecs.Component):with(self.Networked):iter() do
+			local players = self.world:get(id, self.Networked)
+			local scoped_players = self.world:get(id, pair(self.Networked, component))
+			local is_allowed = (players == nil or table.find(players, player) ~= nil)
+				and (scoped_players == nil or table.find(players, player) ~= nil)
+
+			if is_allowed then
+				hydration[id] = hydration[id] or {}
+				hydration[id][name] = if value == nil then NOTHING else value
+			end
+		end
+	end
+
+	return hydration
 end
 
 local function collect(self: Mirror): { [Player]: Changes }
@@ -130,7 +151,33 @@ local function collect(self: Mirror): { [Player]: Changes }
 		if players ~= previous_players then
 			self.world:set(id, pair(self._Previous, self.Networked), players)
 		end
+
+		for _, component in get_targets(self.world, id, self.Networked) do
+			local name = self.world:get(component, jecs.Name) :: string
+			local scoped_players = self.world:get(id, pair(self.Networked, component))
+			local previous_scoped_players = self.world:get(id, pair(self._Previous, pair(self.Networked, component)))
+
+			for _, player in all_players do
+				local is_allowed = scoped_players == nil or table.find(scoped_players, player) ~= nil
+				local was_allowed = previous_scoped_players == nil or table.find(previous_scoped_players, player) ~= nil
+
+				filtered_changes[player][id] = filtered_changes[player][id] or {}
+				local local_changes = filtered_changes[player][id]
+				local should_write = local_changes ~= DELETED and (local_changes[name] or was_allowed)
+
+				if not is_allowed and should_write then
+					local_changes[name] = DELETED
+				end
+			end
+
+			self.world:set(id, pair(self._Previous, pair(self.Networked, component)), scoped_players)
+		end
 	end
+
+	for _, player in self._awaiting_hydration do
+		filtered_changes[player] = hydrate(self, player)
+	end
+	table.clear(self._awaiting_hydration)
 
 	return filtered_changes
 end
@@ -177,6 +224,7 @@ local function new(world: jecs.World): Mirror
 			networked_component_names = world:query(jecs.Name):with(jecs.Component, Networked):cached(),
 			previous = world:query(pair(Previous, jecs.Wildcard)):with(Networked):cached(),
 		},
+		_awaiting_hydration = {},
 		_Previous = Previous,
 		world = world,
 		Networked = Networked,
@@ -191,6 +239,10 @@ local function new(world: jecs.World): Mirror
 				world:remove(id, pair(Previous, component))
 			end
 		end
+	end)
+
+	Players.PlayerAdded:Connect(function(player)
+		table.insert(mirror._awaiting_hydration, player)
 	end)
 
 	return mirror
