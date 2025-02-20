@@ -78,7 +78,7 @@ local function hydrate(self: Mirror, player: Player): Changes
 			local players = self.world:get(id, self.Networked)
 			local scoped_players = self.world:get(id, pair(self.Networked, component))
 			local is_allowed = (players == nil or table.find(players, player) ~= nil)
-				and (scoped_players == nil or table.find(players, player) ~= nil)
+				and (scoped_players == nil or table.find(scoped_players, player) ~= nil)
 
 			if is_allowed then
 				hydration[id] = hydration[id] or {}
