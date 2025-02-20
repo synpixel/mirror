@@ -45,6 +45,21 @@ local function eq(a: any, b: any): boolean
 	return true
 end
 
+local function get_targets(world: jecs.World, entity: jecs.Entity, relation: jecs.Entity): { [number]: jecs.Entity }
+	local targets = {}
+	local nth = 0
+
+	while true do
+		local target = world:target(entity, relation, nth)
+		if not target then
+			return targets
+		end
+
+		targets[nth] = target
+		nth += 1
+	end
+end
+
 local function find_component(self: Mirror, target_name: string): jecs.Entity?
 	for component, name in self._queries.networked_component_names:iter() do
 		if name == target_name then
@@ -69,12 +84,13 @@ local function collect(self: Mirror): { [Player]: Changes }
 	end
 
 	for id in self._queries.previous:iter() do
-		local component = self.world:target(id, self._Previous)
-		local name = self.world:get(component, jecs.Name) :: string
-		if not self.world:has(id, component) then
-			full_changes[id] = full_changes[id] or {}
-			full_changes[id][name] = DELETED
-			self.world:remove(id, pair(self._Previous, component))
+		for _, component in get_targets(self.world, id, self._Previous) do
+			local name = self.world:get(component, jecs.Name) :: string
+			if not self.world:has(id, component) then
+				full_changes[id] = full_changes[id] or {}
+				full_changes[id][name] = DELETED
+				self.world:remove(id, pair(self._Previous, component))
+			end
 		end
 	end
 
@@ -159,7 +175,7 @@ local function new(world: jecs.World): Mirror
 		_deleted = {},
 		_queries = {
 			networked_component_names = world:query(jecs.Name):with(jecs.Component, Networked):cached(),
-			previous = world:query(pair(Previous, jecs.Wildcard)):cached(),
+			previous = world:query(pair(Previous, jecs.Wildcard)):with(Networked):cached(),
 		},
 		_Previous = Previous,
 		world = world,
@@ -171,7 +187,9 @@ local function new(world: jecs.World): Mirror
 	world:set(Networked, jecs.OnRemove, function(id)
 		if not world:has(id, jecs.Component) then
 			table.insert(mirror._deleted, id)
-			world:remove(id, pair(Previous, jecs.Wildcard))
+			for _, component in get_targets(world, id, Previous) do
+				world:remove(id, pair(Previous, component))
+			end
 		end
 	end)
 
