@@ -87,12 +87,12 @@ local function collect(self: Mirror): { [Player]: Changes }
 	local all_players = Players:GetPlayers()
 
 	for id, changes in full_changes do
-		local players = self.world:get(id, self.Networked) or all_players
-		local previous_players = self.world:get(id, pair(self._Previous, self.Networked)) or all_players
+		local players = self.world:get(id, self.Networked)
+		local previous_players = self.world:get(id, pair(self._Previous, self.Networked))
 
 		for _, player in all_players do
-			local is_allowed = table.find(players, player) ~= nil
-			local was_allowed = table.find(previous_players, player) ~= nil
+			local is_allowed = players == nil or table.find(players, player) ~= nil
+			local was_allowed = previous_players == nil or table.find(previous_players, player) ~= nil
 
 			if is_allowed and was_allowed then
 				filtered_changes[player] = filtered_changes[player] or {}
