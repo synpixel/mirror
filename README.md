@@ -21,9 +21,12 @@ local function on_player_added(player: Player)
     local x = world:entity()
     world:set(x, Temperature, 0)
 
-    -- Only allow this specific player to see this entity and its components
-    -- You can allow every player to see this entity with `world:add(x, mirror.Networked)`
-    world:set(x, mirror.Networked, { player })
+    -- Allow every player to see this entity and its components
+    -- You can allow specific players to see this entity with `world:set(x, mirror.Networked, { ... })`
+    world:set(x, mirror.Networked)
+
+    -- Allow only this specific player to see changes to the Temperature component
+    world:set(x, pair(mirror.Networked, Temperature), { player })
 end
 
 local function on_every_frame(delta_time: number)
@@ -32,6 +35,7 @@ local function on_every_frame(delta_time: number)
     end
 
     -- Collect and replicate changes since last `:collect()` call
+    -- New players will receive all of the state they're allowed to see
     for player, changes in mirror:collect() do
         replicate:FireClient(player, changes)
     end
