@@ -4,12 +4,12 @@ description = "Simple replication for jecs"
 authors = ["synpixel"]
 repository = "https://github.com/synpixel/mirror"
 license = "MIT"
-includes = ["pesde.toml", "README.md", "LICENSE", "src/**/*"]
+includes = ["pesde.toml", "README.md", "LICENSE", "lib.luau"]
 
 [target]
 environment = "roblox"
-lib = "src/init.luau"
-build_files = ["src"]
+lib = "lib.luau"
+build_files = ["lib.luau"]
 
 [indices]
 default = "https://github.com/pesde-pkg/index"

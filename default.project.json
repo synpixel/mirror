@@ -1,7 +1,10 @@
 {
   "name": "mirror",
   "tree": {
-    "$path": "src",
+    "$className": "Folder",
+    "lib": {
+      "$path": "lib.luau"
+    },
     "roblox_packages": {
       "$path": "roblox_packages"
     }

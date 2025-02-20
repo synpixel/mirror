@@ -1,5 +1,5 @@
 local Players = game:GetService("Players")
-local jecs = require(script.roblox_packages.jecs)
+local jecs = require(script.Parent.roblox_packages.jecs)
 
 type Deleted = "__d"
 type Nothing = "__n"
