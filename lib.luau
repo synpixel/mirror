@@ -31,6 +31,10 @@ local function eq(a: any, b: any): boolean
 		return a == b
 	end
 
+	if #a ~= #b then
+		return false
+	end
+
 	for k, v in a do
 		if not eq(v, b[k]) then
 			return false
