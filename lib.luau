@@ -26,30 +26,6 @@ export type Mirror = {
 
 local pair = jecs.pair
 
-local function eq(a: any, b: any): boolean
-	if typeof(a) ~= "table" or typeof(b) ~= "table" then
-		return a == b
-	end
-
-	if #a ~= #b then
-		return false
-	end
-
-	for k, v in a do
-		if not eq(v, b[k]) then
-			return false
-		end
-	end
-
-	for k, v in b do
-		if not eq(v, a[k]) then
-			return false
-		end
-	end
-
-	return true
-end
-
 local function get_targets(world: jecs.World, entity: jecs.Entity, relation: jecs.Entity): { [number]: jecs.Entity }
 	local targets = {}
 	local nth = 0
@@ -100,7 +76,7 @@ local function collect(self: Mirror): { [Player]: Changes }
 	for component, name in self._queries.networked_component_names:iter() do
 		for id, value in self.world:query(component):without(jecs.Component):with(self.Networked):iter() do
 			local previous = self.world:get(id, pair(self._Previous, component))
-			if not eq(previous, value) then
+			if previous ~= value then
 				full_changes[id] = full_changes[id] or {}
 				full_changes[id][name] = if value == nil then NOTHING else value
 				self.world:set(id, pair(self._Previous, component), value)
