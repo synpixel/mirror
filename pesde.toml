@@ -1,5 +1,5 @@
 name = "synpixel/mirror"
-version = "0.2.2"
+version = "0.2.3"
 description = "Simple replication for jecs"
 authors = ["synpixel"]
 repository = "https://github.com/synpixel/mirror"
